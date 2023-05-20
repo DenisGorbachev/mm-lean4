@@ -2,18 +2,7 @@ import Std.Data.HashMap
 import Std.Lean.HashSet
 import Mathlib.Data.ByteArray
 
-section forMathlib
-
 abbrev arbitrary := @Inhabited.default
-
-def UpNat (ub a i : Nat) := i < a ∧ i < ub
-
-theorem UpNat.next {ub i} (h : i < ub) : UpNat ub (i+1) i := ⟨Nat.lt_succ_self _, h⟩
-
-theorem upNatWF (ub) : WellFounded (UpNat ub) :=
-  Subrelation.wf (h₂ := (measure (ub - .)).wf) @fun a i ⟨ia, iu⟩ => Nat.sub_lt_sub_left iu ia
-
-end forMathlib
 
 theorem Fin.val_eq_of_lt : a < n.succ → (@Fin.ofNat n a).val = a := Nat.mod_eq_of_lt
 
@@ -32,10 +21,10 @@ partial def ByteSlice.eqArray.loop.impl (arr₁ arr₂ : ByteArray) (i j : Nat) 
 
 @[implemented_by ByteSlice.eqArray.loop.impl]
 noncomputable def ByteSlice.eqArray.loop (arr₁ arr₂ : ByteArray) (i j : Nat) : Bool :=
-(upNatWF arr₂.size).fix (x := j) (C := fun _ => ∀ i, Bool) (i := i)
+(Nat.Up.WF arr₂.size).fix (x := j) (C := fun _ => ∀ i, Bool) (i := i)
   fun j IH i =>
     if h : j < arr₂.size then
-      arr₁.get! i == arr₂.get! j && IH (j+1) (UpNat.next h) (i+1)
+      arr₁.get! i == arr₂.get! j && IH (j+1) (Nat.Up.next h) (i+1)
     else true
 
 partial def ByteSlice.eqArray (bs : ByteSlice) (arr : ByteArray) : Bool :=
@@ -350,10 +339,10 @@ partial def checkHyp.impl (db : DB) (hyps : Array String) (stack : Array Formula
 noncomputable def checkHyp (db : DB) (hyps : Array String) (stack : Array Formula)
   (off : {off // off + hyps.size = stack.size}) (i : Nat) (subst : HashMap String Formula) :
   Except String (HashMap String Formula) :=
-(upNatWF hyps.size).fix (x := i) (C := fun _ => ∀ σ, Except String (HashMap String Formula)) (σ := subst)
+(Nat.Up.WF hyps.size).fix (x := i) (C := fun _ => ∀ σ, Except String (HashMap String Formula)) (σ := subst)
   fun i IH subst =>
     if h : i < hyps.size then
-      checkHypF db hyps stack off (IH (i+1) (UpNat.next h)) i h subst
+      checkHypF db hyps stack off (IH (i+1) (Nat.Up.next h)) i h subst
     else return subst
 
 def stepAssert (db : DB) (pr : ProofState) (f : Formula) : Frame → Except String ProofState
@@ -687,10 +676,10 @@ else feedFinish base arr rs s
 @[implemented_by feed.impl]
 noncomputable def feed (base : Nat) (arr : ByteArray)
   (i : Nat) (rs : FeedState) (s : ParserState) : ParserState :=
-(upNatWF arr.size).fix (x := i) (C := fun _ => ∀ rs s, _) (rs := rs) (s := s)
+(Nat.Up.WF arr.size).fix (x := i) (C := fun _ => ∀ rs s, _) (rs := rs) (s := s)
   fun i IH rs s =>
     if h : i < arr.size then
-      feedOne base arr (IH (i+1) (UpNat.next h)) ⟨i, h⟩ rs s
+      feedOne base arr (IH (i+1) (Nat.Up.next h)) ⟨i, h⟩ rs s
     else feedFinish base arr rs s
 
 def feedAll (s : ParserState) (base : Nat) (arr : ByteArray) : ParserState :=
